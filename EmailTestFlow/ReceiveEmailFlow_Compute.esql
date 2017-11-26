@@ -5,16 +5,30 @@
 --https://www.ibm.com/support/knowledgecenter/en/SSMKHH_10.0.0/com.ibm.etools.mft.doc/ac30000_.htm
 CREATE COMPUTE MODULE ReceiveEmailFlow_Compute
 	CREATE FUNCTION Main() RETURNS BOOLEAN
-	BEGIN
+	BEGIN		
+    -- The Splitter Pattern
+    -- https://www.ibm.com/support/knowledgecenter/en/SSMKHH_9.0.0/com.ibm.scenarios.doc/gop_03/topics/bj60048_.htm
+    -- https://www.ibm.com/support/knowledgecenter/en/SSMKHH_9.0.0/com.ibm.etools.mft.doc/bj28653_.htm
+	DECLARE I INTEGER 1;
+    DECLARE J INTEGER CARDINALITY(InputRoot.MIME.Parts.Part[]);
+	DECLARE MIMEParts REFERENCE TO InputRoot.MIME.Parts;
 	
-	--filter only message with attachment
-	--IF(hasAttachment() IS FALSE) THEN
-	--	RETURN TRUE;
-	--END IF;
-	
-	--check format
-	CALL CopyMessageHeaders();
-	CALL CopyEntireMessage();
+	While I<=J DO
+		CALL CopyMessageHeaders();	   
+	    DECLARE CurrentPart REFERENCE TO InputRoot.MIME.Part[I];
+	    
+	    --attachment found
+	    IF ((CurrentPart."Content-Disposition" IS NOT Null) AND (CurrentPart."X-Attachment-Id" IS NOT Null)) THEN
+	    	
+	    	SET OutputRoot=CurrentPart.Data.BLOB.BLOB;
+	    END IF;
+	    
+	    
+	    SET OutputRoot = InputRoot.MIME.Parts.Part[I];
+		
+		SET I=I+1;
+		PROPAGATE;
+	END While;
 	RETURN TRUE;
 END;
 
@@ -31,15 +45,11 @@ END;
 CREATE PROCEDURE CopyEntireMessage() BEGIN
 	SET OutputRoot = InputRoot;
 END;	
-	
--- test the email has attachment or not
-CREATE FUNCTION hasAttachment() RETURNS BOOLEAN
-BEGIN
-	DECLARE MailContentType REFERENCE TO InputRoot.MIME."Content-Type";
-	DECLARE hasAttachment BOOLEAN false;
 
-	SET hasAttachment=STARTSWITH( MailContentType , 'multipart');
-	RETURN hasAttachment;
-END;
+CREATE PROCEDURE CopyAttachmentPayload() BEGIN
+	SET OutputRoot = InputRoot;
+END;	
+	
+
 
 END MODULE;
