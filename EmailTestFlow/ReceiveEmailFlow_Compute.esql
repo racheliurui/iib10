@@ -15,20 +15,21 @@ CREATE COMPUTE MODULE ReceiveEmailFlow_Compute
 	
 	While I<=J DO
 		CALL CopyMessageHeaders();	   
-	    DECLARE CurrentPart REFERENCE TO InputRoot.MIME.Part[I];
-	    
+	    DECLARE CurrentPart REFERENCE TO InputRoot.MIME.Parts.Part[I];	    
 	    --attachment found
-	    IF ((CurrentPart."Content-Disposition" IS NOT Null) AND (CurrentPart."X-Attachment-Id" IS NOT Null)) THEN
-	    	
-	    	SET OutputRoot=CurrentPart.Data.BLOB.BLOB;
+	    IF ((CurrentPart."Content-Disposition" IS NOT Null) AND (CurrentPart."X-Attachment-Id" IS NOT Null)) THEN	    	
+	    	SET OutputRoot.BLOB.BLOB= CAST( CurrentPart.Data.BLOB.BLOB as BLOB);
+	    	SET Environment.FileName= 'test.txt';
+	    	SET Environment.isAttachment = TRUE;
+	    ELSE
+	    	SET OutputRoot = NULL;
 	    END IF;
-	    
-	    
-	    SET OutputRoot = InputRoot.MIME.Parts.Part[I];
-		
 		SET I=I+1;
 		PROPAGATE;
 	END While;
+	
+	SET Environment.FileName= NULL;
+	SET Environment.isAttachment = FALSE;
 	RETURN TRUE;
 END;
 

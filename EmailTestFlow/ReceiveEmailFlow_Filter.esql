@@ -5,19 +5,10 @@
 CREATE FILTER MODULE ReceiveEmailFlow_Filter
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
-		
-		RETURN TRUE;
-		
-		---according to test, this is not accurate. the gmail with multipart but still not contains attachement
-		--https://stackoverflow.com/questions/3200100/can-you-determine-if-an-email-has-attachments-from-just-the-email-header
-		
-		
-		--DECLARE MailContentType REFERENCE TO InputRoot.MIME."Content-Type";
-		
-		--DECLARE hasAttachment BOOLEAN false;
 
-		--SET hasAttachment=STARTSWITH( Root.MIME."Content-Type" , 'multipart');
-		--RETURN hasAttachment;		
+		
+		RETURN Environment.isAttachment;
+
 	END;
 
 END MODULE;
